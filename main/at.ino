@@ -1,39 +1,44 @@
 int8_t  httpRequest(){
-  const String API = "OR4T3SPD39MMS80O";
-  const String HOST = "api.thingspeak.com";
+  //const String API = "OR4T3SPD39MMS80O";
+  //const String HOST = "api.thingspeak.com";
+  //const String FIELD = "field1";
+  const String HOST = "identifyme-backend-api.herokuapp.com";
   const String PORT = "443";
-  const String FIELD = "field1";
   API_RESPONSE = "";
   int8_t  resp = -1;
   int8_t  valSensor = getSensorData();
-  const String getData = "GET /update?api_key="+ API +"&"+ FIELD +"="+String(valSensor);
 
   Serial.println(F("-------------------------"));
-  resp = sendCommandWithRetry("AT+CIPSTART=\"SSL\",\""+ HOST +"\","+ PORT, AT_MEDIUM_TIMEOUT, "OK", NEED_RESPONSE, NORMAL_RETRY);
+  resp = sendCommandWithRetry("AT+CIPSTART=\"SSL\",\""+ HOST +"\","+ PORT, AT_MEDIUM_TIMEOUT, "OK", NO_NEED_RESPONSE, NORMAL_RETRY);
+  if (resp == -1){
+    Serial.println(F("Error al ejecutar request"));
+    initializeAt();
+    return -1;
+  }
+
+  const String getData = "GET /ping HTTP/1.0\015\012Host: identifyme-backend-api.herokuapp.com\015\012";
+  //const String getData = "GET /update?api_key="+ API +"&"+ FIELD +"="+String(valSensor) + " HTTP/1.1\015\012Host: api.thingspeak.com\015\012";
+  resp = sendCommandWithRetry("AT+CIPSEND=" + String(getData.length()+2), AT_SHORT_TIMEOUT, ">", NO_NEED_RESPONSE, NORMAL_RETRY);
+  
   if (resp == -1){
     Serial.println(F("Error al ejecutar request"));
     initializeAt();
     return -1;
   }
   
-  resp = sendCommandWithRetry("AT+CIPSEND="+String(getData.length()+2), AT_SHORT_TIMEOUT, ">", NEED_RESPONSE, NORMAL_RETRY);
-  if (resp == -1){
-    Serial.println(F("Error al ejecutar request"));
-    initializeAt();
-    return -1;
-  }
+  resp = sendCommandWithRetry(getData, AT_SHORT_TIMEOUT, "+IPD,", NEED_RESPONSE, NORMAL_RETRY);
   
-  resp = sendCommandWithRetry(getData, AT_SHORT_TIMEOUT, "SEND OK", NEED_RESPONSE, NORMAL_RETRY);
   if (resp == -1){
     Serial.println(F("Error al ejecutar request"));
     initializeAt();
     return -1;
   }
+
 
   Serial.println(F("La respuesta: "));
   Serial.println(API_RESPONSE);
   
-  sendCommandWithRetry("AT+CIPCLOSE", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, NO_RETRY);  
+  sendCommandWithRetry("AT+CIPCLOSE", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, NO_RETRY);  
   return 0;
 }
 
@@ -43,22 +48,23 @@ int8_t  getSensorData(){
 
 void initializeAt(){
   const String AP = "TH14";
-  //const String AP = "D200";
   const String PASS = "TheInvincibles26W12D0L";
+  //const String AP = "D200";
   //const String PASS = "pokemon1234";
-  sendCommandWithRetry("AT+CIPCLOSE", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, NO_RETRY);
-  sendCommandWithRetry("AT", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, INFINITE_RETRY);
-  sendCommandWithRetry("AT+CWMODE=1", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, INFINITE_RETRY);
-  sendCommandWithRetry("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"", AT_LONG_TIMEOUT, "OK", NEED_RESPONSE, INFINITE_RETRY);
-  sendCommandWithRetry("AT+CIPMUX=0", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, INFINITE_RETRY);
-  sendCommandWithRetry("AT+CIPSSLSIZE=4096", AT_SHORT_TIMEOUT, "OK", NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+CIPCLOSE", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, NO_RETRY);
+  sendCommandWithRetry("AT+CWQAP", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+RST", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+CWMODE=1", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"", AT_LONG_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+CIPMUX=0", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
+  sendCommandWithRetry("AT+CIPSSLSIZE=4096", AT_SHORT_TIMEOUT, "OK", NO_NEED_RESPONSE, INFINITE_RETRY);
   return;
 }
 
 int8_t  sendCommandWithRetry(const String command, int timeout, char readReplay[], int8_t  mode, int8_t  retries){
   int8_t  i = 0;
   int8_t  resp = 0;
-
   if (retries == INFINITE_RETRY){
     while (true){
       resp = sendCommand(command, timeout, readReplay, mode);
@@ -86,54 +92,78 @@ int8_t  sendCommandWithRetry(const String command, int timeout, char readReplay[
 }
 
 int8_t  sendCommand(const String command, int timeout, char readReplay[], int8_t  mode){
-    String response;
-    response = "";
-    unsigned long previous;
+    char c;
     boolean found = false;
+    boolean foundEspace = false;
+    boolean foundIPD = false;
+    unsigned long time;
+    
     // empty buffer
-    //previous = millis();
-    //do{
-      while(esp8266.available() != 0){    
-        response += esp8266.readString();
-      }
-      response = "";
-    //}while(((millis() - previous) < timeout));
+    while(esp8266.available() != 0){
+      c = esp8266.read();
+      if (c == '\0') continue;
+    }
 
     Serial.print(F("at command => "));
     Serial.print(command);
     Serial.println(F(" "));
 
     esp8266.println(command);
-    
-    previous = millis();
-    // this loop waits for the answer
-    do{
-        // if there are data in the UART input buffer, reads it
-        if(esp8266.available() != 0){    
-            response += esp8266.readString();
-        }
 
-        if (mode == NOT_NEED_RESPONSE){
-          if(strstr(response.c_str(), readReplay))
-          {
-            found = true;
-            break;
-          }
+    API_RESPONSE = "";
+    time = millis();
+    
+    while ((time + timeout) > millis())
+    {
+        if (found == true){
+          break;
         }
-        
-    // Waits for the answer with time out
-    } while(((millis() - previous) < timeout));
+        while (esp8266.available())
+        {
+            c = esp8266.read();
+
+            if (mode == NEED_RESPONSE){
+              Serial.print(c);
+            }
+            
+            if (strstr("+IPD,", readReplay)){
+              API_RESPONSE += c;
+              if (c == '\012'){
+                if (foundIPD == false && strstr(API_RESPONSE.c_str(),"+IPD,")){
+                  foundIPD = true;
+                }else if (foundIPD == true && API_RESPONSE.equals("\015\012")){
+                    API_RESPONSE = "";
+                    foundEspace = true;
+                }else{
+                    if (foundEspace == true && foundIPD==true){
+                      
+                    }else{
+                      API_RESPONSE = "";
+                    }  
+                }
+              }
+            }else{
+              API_RESPONSE += c;
+              if (mode == NO_NEED_RESPONSE){
+                if(strstr(API_RESPONSE.c_str(), readReplay))
+                {
+                  found = true;
+                  break;
+                }
+              }
+            }
+            if (c == '\0') continue;
+        }
+    } 
 
     if (mode == NEED_RESPONSE){
-      Serial.println(F("La respuesta: "));
-      Serial.println(response);
-      if(strstr(response.c_str(), readReplay))
+      if(strstr(API_RESPONSE.c_str(), readReplay) || foundIPD == true)
       {
         found = true;
       }  
-      API_RESPONSE = response;
+    }else{
+      API_RESPONSE = "";
     }
-    response = "";
 
     if(found == true)
     {

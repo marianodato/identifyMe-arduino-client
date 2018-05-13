@@ -11,11 +11,11 @@
 #define AT_SHORT_TIMEOUT 1000
 #define AT_MEDIUM_TIMEOUT 3000
 #define AT_LONG_TIMEOUT 5000
-#define NOT_NEED_RESPONSE 0
+#define NO_NEED_RESPONSE 0
 #define NEED_RESPONSE 1
-#define NORMAL_RETRY 20
+#define NORMAL_RETRY 10
 #define NO_RETRY 1
-#define INFINITE_RETRY 2
+#define INFINITE_RETRY 0
 
 SoftwareSerial esp8266(RX,TX); 
 SoftwareSerial fingerprintSerial(2, 3); // YELLOW, BLUE
@@ -27,7 +27,8 @@ String API_RESPONSE;
 void setup() {
   Serial.print(F("FreeMemory(setup)="));
   Serial.println(freeMemory());
-  
+
+  API_RESPONSE.reserve(250);
   API_RESPONSE = "";
   pinMode(SWITCH_1, INPUT);
   pinMode(SWITCH_2, INPUT);
