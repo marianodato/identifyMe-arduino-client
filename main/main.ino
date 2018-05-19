@@ -13,6 +13,9 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial,00140042);
 
 String SIGNATURE;
 String API_RESPONSE;
+const char * SERIAL_NUMBER = "008BD46B";
+const char * AT_MAC_ADDRESS = "68:C6:3A:8B:D4:6B";
+const char * COMPILE_DATE = __DATE__ " " __TIME__;
 
 void setup() {
   API_RESPONSE = "";
