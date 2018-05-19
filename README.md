@@ -1,2 +1,2 @@
-# identifyMe-arduino-client
-Arduino client for identifyMe project.
+# identifyMe-nodeMCU-client
+NodeMCU client for identifyMe project.

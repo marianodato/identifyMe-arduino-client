@@ -144,9 +144,11 @@ int8_t  storeModel(uint8_t  id){
 }
 
 int8_t  getFingerprintIDez() {
+  int8_t  p = 0;
+  
   getImage();
 
-  int8_t  p = imageToTemplate(1);
+  p = imageToTemplate(1);
 
   if (p!=FINGERPRINT_OK){
     return -1;
@@ -158,7 +160,7 @@ int8_t  getFingerprintIDez() {
     return -1;
   }
   
-  // found a match!
+  // FOUND A MATCH!
   Serial.print(F("Found ID #")); 
   Serial.print(finger.fingerID); 
   Serial.print(F(" with confidence of ")); 
