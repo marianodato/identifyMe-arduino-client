@@ -32,7 +32,7 @@ int8_t  httpRequest(){
     return -1;
   }
 
-  url = "/users/fingerprintStatus/pending";
+  url = "/users?fingerprintStatus=pending";
    
   /*url = "/update?api_key=";
   url += api;
@@ -61,6 +61,7 @@ int8_t  httpRequest(){
  
   client.print(String("GET ") + url + " HTTP/1.0\r\n" +
                 "Host: " + host + "\r\n" +
+                "User-Agent: NodeMCU\r\n" +
                 "Content-length: " + request.length() + "\r\n\r\n" + 
                 request);
   timeout = millis();
