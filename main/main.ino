@@ -6,7 +6,8 @@
 #define SWITCH_1 D1
 #define SWITCH_2 D2
 #define SWITCH_3 D4
-#define TIMEOUT 5000
+#define TIMEOUT_WIFI 10000
+#define TIMEOUT_FINGER 10000
 
 SoftwareSerial fingerprintSerial(D5, D6); // YELLOW CABLE, BLUE CABLE
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial,00140042);
@@ -84,7 +85,7 @@ void loop() {
     Serial.println(F("Waiting for valid finger..."));
     resp = getFingerprintIDez();
 
-    if (resp == -1){
+    if (resp <= 0){
       Serial.println(F("SELECT MODE..."));
       return;
     }

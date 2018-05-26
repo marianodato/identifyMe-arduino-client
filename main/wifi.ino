@@ -66,7 +66,7 @@ int8_t  httpRequest(){
                 request);
   timeout = millis();
   while (client.available() == 0) {
-    if (millis() - timeout > TIMEOUT) {
+    if (millis() - timeout > TIMEOUT_WIFI) {
       Serial.println(F("Exceeded the waiting time!"));
       client.stop();
       return -1;

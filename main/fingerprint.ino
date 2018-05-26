@@ -17,9 +17,11 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
 
   p = getFingerprintIDez();
 
-  if (p != -1){
+  if (p > 0){
     Serial.println(F("Fingerprint already stored!"));
     return -1;
+  }else if (p == -1){
+    return -1;  
   }
   
   Serial.println(F("Remove finger"));
@@ -31,7 +33,11 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
   Serial.println(id);
   Serial.println(F("Place same finger again"));
 
-  getImage();
+  p = getImage();
+
+  if (p!=FINGERPRINT_OK){
+     return -1;
+  }
 
   p = imageToTemplate(2);
 
@@ -60,8 +66,10 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
   return 0;
 }
 
-void getImage(){
+int8_t getImage(){
    int8_t  p = -1;
+   unsigned long timeout = millis();
+   
    while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
@@ -81,8 +89,12 @@ void getImage(){
       Serial.println(F("Unknown error"));
       break;
     }
+    if ((millis() - timeout) > TIMEOUT_FINGER){
+      Serial.println(F("Timeout"));
+      break;
+    }
   }
-  return;
+  return p;
 }
 
 int8_t  imageToTemplate(int8_t  slot){
@@ -146,7 +158,11 @@ int8_t  storeModel(uint8_t  id){
 int8_t  getFingerprintIDez() {
   int8_t  p = 0;
   
-  getImage();
+  p = getImage();
+
+  if (p!=FINGERPRINT_OK){
+     return -1;
+  }
 
   p = imageToTemplate(1);
 
@@ -157,7 +173,11 @@ int8_t  getFingerprintIDez() {
   p = fastSearch();
   
   if (p!=FINGERPRINT_OK){
-    return -1;
+    if (p == FINGERPRINT_NOTFOUND){
+      return 0;
+    }else{
+      return -1;
+    }
   }
   
   // FOUND A MATCH!
