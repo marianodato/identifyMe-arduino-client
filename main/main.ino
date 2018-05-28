@@ -14,12 +14,20 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial,00140042);
 
 String SIGNATURE;
 String API_RESPONSE;
+String API_RESPONSE_STATUS;
+int8_t ID;
+int8_t FINGERPRINT_ID;
+String NAME;
 const char * SERIAL_NUMBER = "008BD46B";
 const char * AT_MAC_ADDRESS = "68:C6:3A:8B:D4:6B";
 const char * COMPILE_DATE = __DATE__ " " __TIME__;
 
 void setup() {
   API_RESPONSE = "";
+  API_RESPONSE_STATUS = "";
+  NAME = "";
+  ID = 0;
+  FINGERPRINT_ID = 0;
   pinMode(SWITCH_1, INPUT);
   pinMode(SWITCH_2, INPUT);
   pinMode(SWITCH_3, INPUT);
@@ -51,7 +59,7 @@ void loop() {
   uint8_t  id;
 
   if (switch1State == HIGH){ // ENROLL
-    resp = httpRequest();
+    resp = getPendingUser(); // 1
     if (resp != 0){
       Serial.println(F("SELECT MODE..."));
       return;
@@ -73,12 +81,12 @@ void loop() {
       return;
     }
 
-    resp = httpRequest();
+    /*resp = httpsRequest(); // 2
     if (resp != 0){
       deleteFingerprint(id);
       Serial.println(F("SELECT MODE..."));
       return;
-    }
+    }*/
     Serial.println(F("SELECT MODE..."));
 
   }else if (switch2State == HIGH || switch3State == HIGH){ // IDENTIFY IN OR OUT
@@ -90,7 +98,7 @@ void loop() {
       return;
     }
 
-    resp = httpRequest();
+    //resp = httpsRequest(); // 3 - 4
     Serial.println(F("SELECT MODE..."));
   }else{}
 }

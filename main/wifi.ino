@@ -1,18 +1,155 @@
-int8_t  httpRequest(){
+int8_t parseResponseInt(String field){
+  int8_t i = 0;
+  int8_t index = 0;
+  String temp = "";
+  char c;
+  int8_t  resp = 0;
+  
+  index = API_RESPONSE.indexOf(field);
+
+  if (index < 0){
+    return -1;
+  }
+
+  for (i=index+(field.length()-1); i++; ){
+    c = API_RESPONSE[i];
+    if (c == ','){
+      break;
+    }
+    temp += c;
+  }
+
+  resp = temp.toInt();
+
+  if (resp == 0){
+    return -1;
+  }
+  
+  return resp;
+}
+
+String parseResponseString(String field){
+  int8_t i = 0;
+  int8_t index = 0;
+  String temp = "";
+  char c;
+  int8_t  resp = 0;
+
+  index = API_RESPONSE.indexOf(field);
+
+  if (index < 0){
+    return "";
+  }
+
+  for (i=index+(field.length()); i++; ){
+    c = API_RESPONSE[i];
+    if (c == '\"'){
+      break;
+    }
+    temp += c;
+  }
+  return temp;
+}
+
+int8_t getPendingUser(){
+  String temp = "";
+  int8_t  resp = 0;
+  char * httpMethod = "GET ";
+  char * httpUri = "/users?fingerprintStatus=pending";
+  String body = getCommonBody();
+  body += "\"}";
+  ID = 0;
+  FINGERPRINT_ID = 0;
+  NAME = "";
+  
+  resp = httpsRequest(httpMethod, httpUri, body);
+  if (resp != 0){
+      return resp;
+  }
+
+  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+    Serial.println(F("Bad Response Status"));
+    API_RESPONSE_STATUS = "";
+    API_RESPONSE = "";
+    return -1;
+  }
+
+  resp = parseResponseInt("\"id\":");
+
+  Serial.print(F("Id: "));
+  Serial.println(resp);
+
+  if (resp == -1){
+    ID = 0;
+    API_RESPONSE_STATUS = "";
+    API_RESPONSE = "";
+    Serial.println(F("Cannot parse field: id!"));
+    return -1;
+  }
+
+  ID = resp;
+
+  resp = parseResponseInt("\"fingerprintId\":");
+
+  Serial.print(F("FingerprintId: "));
+  Serial.println(resp);
+
+  if (resp == -1){
+    ID = 0;
+    FINGERPRINT_ID = 0;
+    API_RESPONSE_STATUS = "";
+    API_RESPONSE = "";
+    Serial.println(F("Cannot parse field: fingerprintId!"));
+    return -1;
+  }
+
+  FINGERPRINT_ID = resp;
+
+  temp = parseResponseString("\"name\":");
+
+  Serial.print(F("Name: "));
+  Serial.println(temp);
+
+  if (temp == ""){
+    ID = 0;
+    FINGERPRINT_ID = 0;
+    NAME = "";
+    API_RESPONSE_STATUS = "";
+    API_RESPONSE = "";
+    Serial.println(F("Cannot parse field: name!"));
+    return -1;
+  }
+
+  NAME = temp;
+
+  API_RESPONSE_STATUS = "";
+  API_RESPONSE = "";
+  return 0;
+}
+
+String getCommonBody(){
+  String body;
+  body = "{\"serialNumber\": \"";
+  body += SERIAL_NUMBER;
+  body += "\", \"atMacAddress\": \"";
+  body += AT_MAC_ADDRESS;
+  body += "\", \"compileDate\": \"";
+  body += COMPILE_DATE;
+  body += "\", \"signature\": \"";
+  body += SIGNATURE;
+  return body;
+}
+
+int8_t  httpsRequest(char * httpMethod, char * httpUri, String body){
   const char * host = "identifyme-backend-api.herokuapp.com";
-  // const char * host = "api.thingspeak.com";
-  // const char * api = "OR4T3SPD39MMS80O";
-  // const char * field = "field1";
-  // int8_t  valSensor = getSensorData();
-  String request;
   const int port = 443;
   const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
-  // const char * fingerprint = "78 60 18 44 81 35 BF DF 77 84 D4 0A 22 0D 9B 4E 6C DC 57 2C"; // SHA1
   bool foundBlankLine = false;
-  String url;
   unsigned long timeout;
   char c;
+  bool first = true;
   API_RESPONSE = "";
+  API_RESPONSE_STATUS = "";
   
   Serial.print(F("Connecting to "));
   Serial.println(host);
@@ -31,39 +168,20 @@ int8_t  httpRequest(){
     client.stop();
     return -1;
   }
-
-  url = "/users?fingerprintStatus=pending";
-   
-  /*url = "/update?api_key=";
-  url += api;
-  url += "&";
-  url += field;
-  url += "=";
-  url += valSensor;*/
-
-  request = "{\"serialNumber\": \"";
-  request += SERIAL_NUMBER;
-  request += "\", \"atMacAddress\": \"";
-  request += AT_MAC_ADDRESS;
-  request += "\", \"compileDate\": \"";
-  request += COMPILE_DATE;
-  request += "\", \"signature\": \"";
-  request += SIGNATURE;
-  request += "\"}";
  
   Serial.print(F("URL of request: https://"));
   Serial.print(host);
   Serial.print(F(":"));
   Serial.print(port);
-  Serial.println(url);
-  Serial.print(F("Data: "));
-  Serial.println(request);
+  Serial.println(httpUri);
+  Serial.print(F("Body: "));
+  Serial.println(body);
  
-  client.print(String("GET ") + url + " HTTP/1.0\r\n" +
+  client.print(String(httpMethod) + httpUri + " HTTP/1.0\r\n" +
                 "Host: " + host + "\r\n" +
                 "User-Agent: NodeMCU\r\n" +
-                "Content-length: " + request.length() + "\r\n\r\n" + 
-                request);
+                "Content-length: " + body.length() + "\r\n\r\n" + 
+                body);
   timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > TIMEOUT_WIFI) {
@@ -83,6 +201,10 @@ int8_t  httpRequest(){
     Serial.print(c);
     API_RESPONSE += c;
     if (c == '\n'){
+      if(first){
+         API_RESPONSE_STATUS = API_RESPONSE;
+         first = false;  
+      }
       if (API_RESPONSE.equals("\r\n")){
         API_RESPONSE = "";
         foundBlankLine = true;
@@ -96,23 +218,22 @@ int8_t  httpRequest(){
   }
  
   Serial.println();
+  Serial.println();
   Serial.println(F("Closing connection"));
 
+  Serial.println();
+  Serial.println(F("Response Status: "));
+  Serial.println(API_RESPONSE_STATUS);
+  
   Serial.println(F("Response: "));
   Serial.println(API_RESPONSE);
-  API_RESPONSE = "";
+  Serial.println();
   return 0;
-}
-
-int8_t  getSensorData(){
-  return random(127);
 }
 
 void connectToWifi(){
   const char * ssid = "TH14";
   const char * password = "TheInvincibles26W12D0L";
-  // const char * ssid = "D200";
-  // const char * password = "pokemon1234";
   
   Serial.println();
   Serial.println();
