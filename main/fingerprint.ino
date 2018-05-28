@@ -1,13 +1,3 @@
-int8_t  readnumber(void) {
-  int8_t  num = 0;
-  
-  while (num == 0) {
-    while (! Serial.available());
-    num = Serial.parseInt();
-  }
-  return num;
-}
-
 int8_t  getFingerprintEnroll(uint8_t  id) {
 
   int8_t  p = 0;

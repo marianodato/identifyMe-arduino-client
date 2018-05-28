@@ -59,34 +59,31 @@ void loop() {
   uint8_t  id;
 
   if (switch1State == HIGH){ // ENROLL
-    resp = getPendingUser(); // 1
+    resp = getPendingUser();
     if (resp != 0){
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
     Serial.println(F("Ready to enroll a fingerprint!"));
-    Serial.println(F("Please type in the ID # (from 1 to 162) you want to save this finger as..."));
-    id = readnumber();
-    if (id < 1 || id > 162) {
-       Serial.println(F("ID not allowed, try again!"));
-       return;
-    }
     Serial.print(F("Enrolling ID #"));
-    Serial.println(id);
-    resp = getFingerprintEnroll(id);
+    Serial.println(FINGERPRINT_ID);
+    resp = getFingerprintEnroll(FINGERPRINT_ID);
     
     if (resp !=0){
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
-    /*resp = httpsRequest(); // 2
+    resp = putEnrolledUser();
     if (resp != 0){
-      deleteFingerprint(id);
+      Serial.println(F("Deleting ID #"));
+      Serial.println(FINGERPRINT_ID);
+      deleteFingerprint(FINGERPRINT_ID);
+      FINGERPRINT_ID = 0;
       Serial.println(F("SELECT MODE..."));
       return;
-    }*/
+    }
     Serial.println(F("SELECT MODE..."));
 
   }else if (switch2State == HIGH || switch3State == HIGH){ // IDENTIFY IN OR OUT
@@ -97,8 +94,8 @@ void loop() {
       Serial.println(F("SELECT MODE..."));
       return;
     }
-
-    //resp = httpsRequest(); // 3 - 4
+    // TODO
+    //resp = httpsRequest();
     Serial.println(F("SELECT MODE..."));
   }else{}
 }

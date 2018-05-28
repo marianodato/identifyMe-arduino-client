@@ -127,6 +127,39 @@ int8_t getPendingUser(){
   return 0;
 }
 
+int8_t putEnrolledUser(){
+  int8_t  resp = 0;
+  char * httpMethod = "PUT ";
+  String httpUri = "/users/";
+  httpUri += ID;
+  String body = getCommonBody();
+  body += "\", \"fingerprintStatus\": \"enrolled";
+  body += "\"}";
+  
+  resp = httpsRequest(httpMethod, httpUri, body);
+  if (resp != 0){
+      ID = 0;
+      NAME = "";
+      return resp;
+  }
+
+  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+    Serial.println(F("Bad Response Status"));
+    ID = 0;
+    NAME = "";
+    API_RESPONSE_STATUS = "";
+    API_RESPONSE = "";
+    return -1;
+  }
+
+  ID = 0;
+  FINGERPRINT_ID = 0;
+  NAME = "";
+  API_RESPONSE_STATUS = "";
+  API_RESPONSE = "";
+  return 0;
+}
+
 String getCommonBody(){
   String body;
   body = "{\"serialNumber\": \"";
@@ -140,7 +173,7 @@ String getCommonBody(){
   return body;
 }
 
-int8_t  httpsRequest(char * httpMethod, char * httpUri, String body){
+int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
   const char * host = "identifyme-backend-api.herokuapp.com";
   const int port = 443;
   const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
@@ -235,7 +268,6 @@ void connectToWifi(){
   const char * ssid = "TH14";
   const char * password = "TheInvincibles26W12D0L";
   
-  Serial.println();
   Serial.println();
   Serial.print(F("Connecting to wifi: "));
   Serial.println(ssid);
