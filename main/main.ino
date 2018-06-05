@@ -16,8 +16,9 @@ String SIGNATURE;
 String API_RESPONSE;
 String API_RESPONSE_STATUS;
 int8_t ID;
-int8_t FINGERPRINT_ID;
+int8_t ENROLL_MODE_FINGERPRINT_ID;
 String NAME;
+int8_t IDENTIFY_MODE_FINGERPRINT_ID;
 const char * SERIAL_NUMBER = "008BD46B";
 const char * AT_MAC_ADDRESS = "68:C6:3A:8B:D4:6B";
 const char * COMPILE_DATE = __DATE__ " " __TIME__;
@@ -27,7 +28,8 @@ void setup() {
   API_RESPONSE_STATUS = "";
   NAME = "";
   ID = 0;
-  FINGERPRINT_ID = 0;
+  ENROLL_MODE_FINGERPRINT_ID = 0;
+  IDENTIFY_MODE_FINGERPRINT_ID = 0;
   pinMode(SWITCH_1, INPUT);
   pinMode(SWITCH_2, INPUT);
   pinMode(SWITCH_3, INPUT);
@@ -61,26 +63,29 @@ void loop() {
   if (switch1State == HIGH){ // ENROLL
     resp = getPendingUser();
     if (resp != 0){
+      Serial.println(F("Error getting pending user"));
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
     Serial.println(F("Ready to enroll a fingerprint!"));
     Serial.print(F("Enrolling ID #"));
-    Serial.println(FINGERPRINT_ID);
-    resp = getFingerprintEnroll(FINGERPRINT_ID);
+    Serial.println(ENROLL_MODE_FINGERPRINT_ID);
+    resp = getFingerprintEnroll(ENROLL_MODE_FINGERPRINT_ID);
     
     if (resp !=0){
+      Serial.println(F("Error enrolling fingerprint"));
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
     resp = putEnrolledUser();
     if (resp != 0){
+      Serial.println(F("Error updating fingerprint status"));
       Serial.println(F("Deleting ID #"));
-      Serial.println(FINGERPRINT_ID);
-      deleteFingerprint(FINGERPRINT_ID);
-      FINGERPRINT_ID = 0;
+      Serial.println(ENROLL_MODE_FINGERPRINT_ID);
+      deleteFingerprint(ENROLL_MODE_FINGERPRINT_ID);
+      ENROLL_MODE_FINGERPRINT_ID = 0;
       Serial.println(F("SELECT MODE..."));
       return;
     }
@@ -91,11 +96,27 @@ void loop() {
     resp = getFingerprintIDez();
 
     if (resp <= 0){
+      Serial.println(F("Error identifying fingerprint"));
+      IDENTIFY_MODE_FINGERPRINT_ID = 0;
       Serial.println(F("SELECT MODE..."));
       return;
     }
-    // TODO
-    //resp = httpsRequest();
+
+    if (switch2State == HIGH){
+      resp = postUserRegistrationRecord();  
+      if (resp !=0){
+        Serial.println(F("Error posting entry record"));
+        Serial.println(F("SELECT MODE..."));
+        return;
+      }
+    }else{
+      resp = putUserRegistrationRecord();  
+      if (resp !=0){
+        Serial.println(F("Error posting exit record"));
+        Serial.println(F("SELECT MODE..."));
+        return;
+      }
+    }
     Serial.println(F("SELECT MODE..."));
   }else{}
 }

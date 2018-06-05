@@ -59,7 +59,7 @@ int8_t getPendingUser(){
   String body = getCommonBody();
   body += "\"}";
   ID = 0;
-  FINGERPRINT_ID = 0;
+  ENROLL_MODE_FINGERPRINT_ID = 0;
   NAME = "";
   
   resp = httpsRequest(httpMethod, httpUri, body);
@@ -96,14 +96,14 @@ int8_t getPendingUser(){
 
   if (resp == -1){
     ID = 0;
-    FINGERPRINT_ID = 0;
+    ENROLL_MODE_FINGERPRINT_ID = 0;
     API_RESPONSE_STATUS = "";
     API_RESPONSE = "";
     Serial.println(F("Cannot parse field: fingerprintId!"));
     return -1;
   }
 
-  FINGERPRINT_ID = resp;
+  ENROLL_MODE_FINGERPRINT_ID = resp;
 
   temp = parseResponseString("\"name\":");
 
@@ -112,7 +112,7 @@ int8_t getPendingUser(){
 
   if (temp == ""){
     ID = 0;
-    FINGERPRINT_ID = 0;
+    ENROLL_MODE_FINGERPRINT_ID = 0;
     NAME = "";
     API_RESPONSE_STATUS = "";
     API_RESPONSE = "";
@@ -153,10 +153,59 @@ int8_t putEnrolledUser(){
   }
 
   ID = 0;
-  FINGERPRINT_ID = 0;
+  ENROLL_MODE_FINGERPRINT_ID = 0;
   NAME = "";
   API_RESPONSE_STATUS = "";
   API_RESPONSE = "";
+  return 0;
+}
+
+int8_t postUserRegistrationRecord(){
+  int8_t  resp = 0;
+  char * httpMethod = "POST ";
+  String httpUri = "/users/registration/records";
+  String body = getCommonBody();
+  body += "\", \"fingerprintId\": ";
+  body += IDENTIFY_MODE_FINGERPRINT_ID;
+  body += "}";
+  
+  resp = httpsRequest(httpMethod, httpUri, body);
+  if (resp != 0){
+      IDENTIFY_MODE_FINGERPRINT_ID = 0;
+      return resp;
+  }
+
+  if (API_RESPONSE_STATUS.indexOf("201") < 0){
+    Serial.println(F("Bad Response Status"));
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    return -1;
+  }
+
+  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+  return 0;
+}
+
+int8_t putUserRegistrationRecord(){
+  int8_t  resp = 0;
+  char * httpMethod = "PUT ";
+  String httpUri = "/users/registration/records/";
+  httpUri += IDENTIFY_MODE_FINGERPRINT_ID;
+  String body = getCommonBody();
+  body += "\"}";
+  
+  resp = httpsRequest(httpMethod, httpUri, body);
+  if (resp != 0){
+      IDENTIFY_MODE_FINGERPRINT_ID = 0;
+      return resp;
+  }
+
+  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+    Serial.println(F("Bad Response Status"));
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    return -1;
+  }
+
+  IDENTIFY_MODE_FINGERPRINT_ID = 0;
   return 0;
 }
 

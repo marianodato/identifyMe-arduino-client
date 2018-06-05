@@ -147,6 +147,7 @@ int8_t  storeModel(uint8_t  id){
 
 int8_t  getFingerprintIDez() {
   int8_t  p = 0;
+  IDENTIFY_MODE_FINGERPRINT_ID = 0;
   
   p = getImage();
 
@@ -175,6 +176,7 @@ int8_t  getFingerprintIDez() {
   Serial.print(finger.fingerID); 
   Serial.print(F(" with confidence of ")); 
   Serial.println(finger.confidence);
+  IDENTIFY_MODE_FINGERPRINT_ID = finger.fingerID;
   return finger.fingerID; 
 }
 
