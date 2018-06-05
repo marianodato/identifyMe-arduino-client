@@ -1,19 +1,19 @@
-int8_t parseResponseInt(String field){
+int8_t parseResponseInt(String field) {
   int8_t i = 0;
   int8_t index = 0;
   String temp = "";
   char c;
   int8_t  resp = 0;
-  
+
   index = API_RESPONSE.indexOf(field);
 
-  if (index < 0){
+  if (index < 0) {
     return -1;
   }
 
-  for (i=index+(field.length()-1); i++; ){
+  for (i = index + (field.length() - 1); i++; ) {
     c = API_RESPONSE[i];
-    if (c == ','){
+    if (c == ',') {
       break;
     }
     temp += c;
@@ -21,14 +21,14 @@ int8_t parseResponseInt(String field){
 
   resp = temp.toInt();
 
-  if (resp == 0){
+  if (resp == 0) {
     return -1;
   }
-  
+
   return resp;
 }
 
-String parseResponseString(String field){
+String parseResponseString(String field) {
   int8_t i = 0;
   int8_t index = 0;
   String temp = "";
@@ -37,13 +37,13 @@ String parseResponseString(String field){
 
   index = API_RESPONSE.indexOf(field);
 
-  if (index < 0){
+  if (index < 0) {
     return "";
   }
 
-  for (i=index+(field.length()); i++; ){
+  for (i = index + (field.length()); i++; ) {
     c = API_RESPONSE[i];
-    if (c == '\"'){
+    if (c == '\"') {
       break;
     }
     temp += c;
@@ -51,7 +51,7 @@ String parseResponseString(String field){
   return temp;
 }
 
-int8_t getPendingUser(){
+int8_t getPendingUser() {
   String temp = "";
   int8_t  resp = 0;
   char * httpMethod = "GET ";
@@ -61,13 +61,13 @@ int8_t getPendingUser(){
   ID = 0;
   ENROLL_MODE_FINGERPRINT_ID = 0;
   NAME = "";
-  
+
   resp = httpsRequest(httpMethod, httpUri, body);
-  if (resp != 0){
-      return resp;
+  if (resp != 0) {
+    return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
     Serial.println(F("Bad Response Status"));
     API_RESPONSE_STATUS = "";
     API_RESPONSE = "";
@@ -79,7 +79,7 @@ int8_t getPendingUser(){
   Serial.print(F("Id: "));
   Serial.println(resp);
 
-  if (resp == -1){
+  if (resp == -1) {
     ID = 0;
     API_RESPONSE_STATUS = "";
     API_RESPONSE = "";
@@ -94,7 +94,7 @@ int8_t getPendingUser(){
   Serial.print(F("FingerprintId: "));
   Serial.println(resp);
 
-  if (resp == -1){
+  if (resp == -1) {
     ID = 0;
     ENROLL_MODE_FINGERPRINT_ID = 0;
     API_RESPONSE_STATUS = "";
@@ -110,7 +110,7 @@ int8_t getPendingUser(){
   Serial.print(F("Name: "));
   Serial.println(temp);
 
-  if (temp == ""){
+  if (temp == "") {
     ID = 0;
     ENROLL_MODE_FINGERPRINT_ID = 0;
     NAME = "";
@@ -127,7 +127,7 @@ int8_t getPendingUser(){
   return 0;
 }
 
-int8_t putEnrolledUser(){
+int8_t putEnrolledUser() {
   int8_t  resp = 0;
   char * httpMethod = "PUT ";
   String httpUri = "/users/";
@@ -135,15 +135,15 @@ int8_t putEnrolledUser(){
   String body = getCommonBody();
   body += "\", \"fingerprintStatus\": \"enrolled";
   body += "\"}";
-  
+
   resp = httpsRequest(httpMethod, httpUri, body);
-  if (resp != 0){
-      ID = 0;
-      NAME = "";
-      return resp;
+  if (resp != 0) {
+    ID = 0;
+    NAME = "";
+    return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
     Serial.println(F("Bad Response Status"));
     ID = 0;
     NAME = "";
@@ -160,7 +160,7 @@ int8_t putEnrolledUser(){
   return 0;
 }
 
-int8_t postUserRegistrationRecord(){
+int8_t postUserRegistrationRecord() {
   int8_t  resp = 0;
   char * httpMethod = "POST ";
   String httpUri = "/users/registration/records";
@@ -168,14 +168,14 @@ int8_t postUserRegistrationRecord(){
   body += "\", \"fingerprintId\": ";
   body += IDENTIFY_MODE_FINGERPRINT_ID;
   body += "}";
-  
+
   resp = httpsRequest(httpMethod, httpUri, body);
-  if (resp != 0){
-      IDENTIFY_MODE_FINGERPRINT_ID = 0;
-      return resp;
+  if (resp != 0) {
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("201") < 0){
+  if (API_RESPONSE_STATUS.indexOf("201") < 0) {
     Serial.println(F("Bad Response Status"));
     IDENTIFY_MODE_FINGERPRINT_ID = 0;
     return -1;
@@ -185,21 +185,21 @@ int8_t postUserRegistrationRecord(){
   return 0;
 }
 
-int8_t putUserRegistrationRecord(){
+int8_t putUserRegistrationRecord() {
   int8_t  resp = 0;
   char * httpMethod = "PUT ";
   String httpUri = "/users/registration/records/";
   httpUri += IDENTIFY_MODE_FINGERPRINT_ID;
   String body = getCommonBody();
   body += "\"}";
-  
+
   resp = httpsRequest(httpMethod, httpUri, body);
-  if (resp != 0){
-      IDENTIFY_MODE_FINGERPRINT_ID = 0;
-      return resp;
+  if (resp != 0) {
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0){
+  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
     Serial.println(F("Bad Response Status"));
     IDENTIFY_MODE_FINGERPRINT_ID = 0;
     return -1;
@@ -209,7 +209,7 @@ int8_t putUserRegistrationRecord(){
   return 0;
 }
 
-String getCommonBody(){
+String getCommonBody() {
   String body;
   body = "{\"serialNumber\": \"";
   body += SERIAL_NUMBER;
@@ -222,7 +222,7 @@ String getCommonBody(){
   return body;
 }
 
-int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
+int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
   const char * host = "identifyme-backend-api.herokuapp.com";
   const int port = 443;
   const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
@@ -232,25 +232,25 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
   bool first = true;
   API_RESPONSE = "";
   API_RESPONSE_STATUS = "";
-  
+
   Serial.print(F("Connecting to "));
   Serial.println(host);
- 
+
   WiFiClientSecure client;
   if (!client.connect(host, port)) {
     Serial.println(F("Error connecting to host!"));
     connectToWifi();
     return -1;
   }
- 
-  if(client.verify(fingerprint,host)){
-    Serial.println(F("The certificate is valid!")); 
+
+  if (client.verify(fingerprint, host)) {
+    Serial.println(F("The certificate is valid!"));
   } else {
-    Serial.println(F("The certificate is invalid!")); 
+    Serial.println(F("The certificate is invalid!"));
     client.stop();
     return -1;
   }
- 
+
   Serial.print(F("URL of request: https://"));
   Serial.print(host);
   Serial.print(F(":"));
@@ -258,12 +258,12 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
   Serial.println(httpUri);
   Serial.print(F("Body: "));
   Serial.println(body);
- 
+
   client.print(String(httpMethod) + httpUri + " HTTP/1.0\r\n" +
-                "Host: " + host + "\r\n" +
-                "User-Agent: NodeMCU\r\n" +
-                "Content-length: " + body.length() + "\r\n\r\n" + 
-                body);
+               "Host: " + host + "\r\n" +
+               "User-Agent: NodeMCU\r\n" +
+               "Content-length: " + body.length() + "\r\n\r\n" +
+               body);
   timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > TIMEOUT_WIFI) {
@@ -272,33 +272,33 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
       return -1;
     }
   }
- 
+
   // HTTPS NEEDS 20 KB OF MEMORY
-  Serial.println(F("\nFree memory on NodeMCU:")); 
+  Serial.println(F("\nFree memory on NodeMCU:"));
   Serial.print(ESP.getFreeHeap());
   Serial.print(F("Bytes\n\n"));
- 
-  while(client.available()){
+
+  while (client.available()) {
     c = client.read();
     Serial.print(c);
     API_RESPONSE += c;
-    if (c == '\n'){
-      if(first){
-         API_RESPONSE_STATUS = API_RESPONSE;
-         first = false;  
+    if (c == '\n') {
+      if (first) {
+        API_RESPONSE_STATUS = API_RESPONSE;
+        first = false;
       }
-      if (API_RESPONSE.equals("\r\n")){
+      if (API_RESPONSE.equals("\r\n")) {
         API_RESPONSE = "";
         foundBlankLine = true;
-      }else{
-        if (foundBlankLine == true){  
-        }else{
+      } else {
+        if (foundBlankLine == true) {
+        } else {
           API_RESPONSE = "";
-        }  
+        }
       }
     }
   }
- 
+
   Serial.println();
   Serial.println();
   Serial.println(F("Closing connection"));
@@ -306,31 +306,31 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body){
   Serial.println();
   Serial.println(F("Response Status: "));
   Serial.println(API_RESPONSE_STATUS);
-  
+
   Serial.println(F("Response: "));
   Serial.println(API_RESPONSE);
   Serial.println();
   return 0;
 }
 
-void connectToWifi(){
+void connectToWifi() {
   const char * ssid = "TH14";
   const char * password = "TheInvincibles26W12D0L";
-  
+
   Serial.println();
   Serial.print(F("Connecting to wifi: "));
   Serial.println(ssid);
- 
+
   WiFi.mode(WIFI_STA); // CLIENT MODE
   WiFi.begin(ssid, password);
- 
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
- 
+
   Serial.println("");
-  Serial.println(F("WiFi connected")); 
+  Serial.println(F("WiFi connected"));
   Serial.println(F("IP address: "));
   Serial.println(WiFi.localIP());
   return;

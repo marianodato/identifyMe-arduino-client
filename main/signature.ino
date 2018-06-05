@@ -1,4 +1,4 @@
-void getSignature(){
+void getSignature() {
   const char * key = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
   String value;
   uint8_t * result;
@@ -17,8 +17,8 @@ void getSignature(){
   result = Sha256.resultHmac();
   Serial.print(F("Got: "));
   for (i = 0; i < 32; i++) {
-      SIGNATURE+=("0123456789abcdef"[result[i] >> 4]);
-      SIGNATURE+=("0123456789abcdef"[result[i] & 0xf]);
+    SIGNATURE += ("0123456789abcdef"[result[i] >> 4]);
+    SIGNATURE += ("0123456789abcdef"[result[i] & 0xf]);
   }
   Serial.print(SIGNATURE);
   Serial.print(F("\n"));

@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-#include <ESP8266WiFi.h> 
+#include <ESP8266WiFi.h>
 #include <Adafruit_Fingerprint.h>
 #include "sha256.h"
 
@@ -10,7 +10,7 @@
 #define TIMEOUT_FINGER 10000
 
 SoftwareSerial fingerprintSerial(D5, D6); // YELLOW CABLE, BLUE CABLE
-Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial,00140042);
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial, 00140042);
 
 String SIGNATURE;
 String API_RESPONSE;
@@ -37,14 +37,14 @@ void setup() {
   Serial.begin(9600);
   while (!Serial);
   finger.begin(57600);
-  
+
   Serial.println(F("\n\nFINAL PROJECT"));
   if (finger.verifyPassword()) {
     Serial.println(F("Found fingerprint sensor!"));
   } else {
     Serial.println(F("Did not find fingerprint sensor :("));
-    while (1) { 
-      delay(1); 
+    while (1) {
+      delay(1);
     }
   }
 
@@ -60,9 +60,9 @@ void loop() {
   int8_t  resp = 0;
   uint8_t  id;
 
-  if (switch1State == HIGH){ // ENROLL
+  if (switch1State == HIGH) { // ENROLL
     resp = getPendingUser();
-    if (resp != 0){
+    if (resp != 0) {
       Serial.println(F("Error getting pending user"));
       Serial.println(F("SELECT MODE..."));
       return;
@@ -72,15 +72,15 @@ void loop() {
     Serial.print(F("Enrolling ID #"));
     Serial.println(ENROLL_MODE_FINGERPRINT_ID);
     resp = getFingerprintEnroll(ENROLL_MODE_FINGERPRINT_ID);
-    
-    if (resp !=0){
+
+    if (resp != 0) {
       Serial.println(F("Error enrolling fingerprint"));
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
     resp = putEnrolledUser();
-    if (resp != 0){
+    if (resp != 0) {
       Serial.println(F("Error updating fingerprint status"));
       Serial.println(F("Deleting ID #"));
       Serial.println(ENROLL_MODE_FINGERPRINT_ID);
@@ -91,32 +91,32 @@ void loop() {
     }
     Serial.println(F("SELECT MODE..."));
 
-  }else if (switch2State == HIGH || switch3State == HIGH){ // IDENTIFY IN OR OUT
+  } else if (switch2State == HIGH || switch3State == HIGH) { // IDENTIFY IN OR OUT
     Serial.println(F("Waiting for valid finger..."));
     resp = getFingerprintIDez();
 
-    if (resp <= 0){
+    if (resp <= 0) {
       Serial.println(F("Error identifying fingerprint"));
       IDENTIFY_MODE_FINGERPRINT_ID = 0;
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
-    if (switch2State == HIGH){
-      resp = postUserRegistrationRecord();  
-      if (resp !=0){
+    if (switch2State == HIGH) {
+      resp = postUserRegistrationRecord();
+      if (resp != 0) {
         Serial.println(F("Error posting entry record"));
         Serial.println(F("SELECT MODE..."));
         return;
       }
-    }else{
-      resp = putUserRegistrationRecord();  
-      if (resp !=0){
+    } else {
+      resp = putUserRegistrationRecord();
+      if (resp != 0) {
         Serial.println(F("Error posting exit record"));
         Serial.println(F("SELECT MODE..."));
         return;
       }
     }
     Serial.println(F("SELECT MODE..."));
-  }else{}
+  } else {}
 }
