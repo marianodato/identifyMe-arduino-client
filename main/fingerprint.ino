@@ -1,5 +1,4 @@
 int8_t  getFingerprintEnroll(uint8_t  id) {
-
   int8_t  p = 0;
 
   Serial.print(F("Waiting for valid finger to enroll as #"));
@@ -56,6 +55,41 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
   return 0;
 }
 
+int8_t  getFingerprintIDez() {
+  int8_t  p = 0;
+  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+
+  p = getImage();
+
+  if (p != FINGERPRINT_OK) {
+    return -1;
+  }
+
+  p = imageToTemplate(1);
+
+  if (p != FINGERPRINT_OK) {
+    return -1;
+  }
+
+  p = fastSearch();
+
+  if (p != FINGERPRINT_OK) {
+    if (p == FINGERPRINT_NOTFOUND) {
+      return 0;
+    } else {
+      return -1;
+    }
+  }
+
+  // FOUND A MATCH!
+  Serial.print(F("Found ID #"));
+  Serial.print(finger.fingerID);
+  Serial.print(F(" with confidence of "));
+  Serial.println(finger.confidence);
+  IDENTIFY_MODE_FINGERPRINT_ID = finger.fingerID;
+  return finger.fingerID;
+}
+
 int8_t getImage() {
   int8_t  p = -1;
   unsigned long timeout = millis();
@@ -79,15 +113,15 @@ int8_t getImage() {
         Serial.println(F("Unknown error"));
         break;
     }
-    if ((millis() - timeout) > TIMEOUT_FINGER) {
-      Serial.println(F("Timeout"));
+    if ((millis() - timeout) > TIMEOUT_FINGERPRINT) {
+      Serial.println(F("Fingerprint timeout"));
       break;
     }
   }
   return p;
 }
 
-int8_t  imageToTemplate(int8_t  slot) {
+int8_t  imageToTemplate(uint8_t  slot) {
   int8_t  p = -1;
   p = finger.image2Tz(slot);
   switch (p) {
@@ -145,41 +179,6 @@ int8_t  storeModel(uint8_t  id) {
   return p;
 }
 
-int8_t  getFingerprintIDez() {
-  int8_t  p = 0;
-  IDENTIFY_MODE_FINGERPRINT_ID = 0;
-
-  p = getImage();
-
-  if (p != FINGERPRINT_OK) {
-    return -1;
-  }
-
-  p = imageToTemplate(1);
-
-  if (p != FINGERPRINT_OK) {
-    return -1;
-  }
-
-  p = fastSearch();
-
-  if (p != FINGERPRINT_OK) {
-    if (p == FINGERPRINT_NOTFOUND) {
-      return 0;
-    } else {
-      return -1;
-    }
-  }
-
-  // FOUND A MATCH!
-  Serial.print(F("Found ID #"));
-  Serial.print(finger.fingerID);
-  Serial.print(F(" with confidence of "));
-  Serial.println(finger.confidence);
-  IDENTIFY_MODE_FINGERPRINT_ID = finger.fingerID;
-  return finger.fingerID;
-}
-
 int8_t  fastSearch() {
   int8_t  p = -1;
 
@@ -196,7 +195,7 @@ int8_t  fastSearch() {
   return p;
 }
 
-int8_t  deleteFingerprint(int8_t  id) {
+int8_t  deleteFingerprint(uint8_t  id) {
   int8_t  p = -1;
 
   p = finger.deleteModel(id);

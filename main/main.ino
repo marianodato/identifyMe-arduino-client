@@ -7,35 +7,38 @@
 #define SWITCH_2 D2
 #define SWITCH_3 D4
 #define TIMEOUT_WIFI 10000
-#define TIMEOUT_FINGER 10000
+#define TIMEOUT_FINGERPRINT 10000
 
 SoftwareSerial fingerprintSerial(D5, D6); // YELLOW CABLE, BLUE CABLE
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial, 00140042);
 
+uint16_t USER_ID;
+String USERNAME;
 String SIGNATURE;
 String API_RESPONSE;
 String API_RESPONSE_STATUS;
-int8_t ID;
-int8_t ENROLL_MODE_FINGERPRINT_ID;
-String NAME;
-int8_t IDENTIFY_MODE_FINGERPRINT_ID;
+uint8_t ENROLL_MODE_FINGERPRINT_ID;
+uint8_t IDENTIFY_MODE_FINGERPRINT_ID;
 const char * SERIAL_NUMBER = "008BD46B";
 const char * AT_MAC_ADDRESS = "68:C6:3A:8B:D4:6B";
 const char * COMPILE_DATE = __DATE__ " " __TIME__;
 
 void setup() {
+  USER_ID = 0;
+  USERNAME = "";
+  SIGNATURE = "";
   API_RESPONSE = "";
   API_RESPONSE_STATUS = "";
-  NAME = "";
-  ID = 0;
   ENROLL_MODE_FINGERPRINT_ID = 0;
   IDENTIFY_MODE_FINGERPRINT_ID = 0;
+
   pinMode(SWITCH_1, INPUT);
   pinMode(SWITCH_2, INPUT);
   pinMode(SWITCH_3, INPUT);
 
   Serial.begin(9600);
   while (!Serial);
+
   finger.begin(57600);
 
   Serial.println(F("\n\nFINAL PROJECT"));
@@ -44,7 +47,7 @@ void setup() {
   } else {
     Serial.println(F("Did not find fingerprint sensor :("));
     while (1) {
-      delay(1);
+      delay(500);
     }
   }
 
@@ -54,11 +57,10 @@ void setup() {
 }
 
 void loop() {
-  int8_t  switch1State = digitalRead(SWITCH_1);
-  int8_t  switch2State = digitalRead(SWITCH_2);
-  int8_t  switch3State = digitalRead(SWITCH_3);
   int8_t  resp = 0;
-  uint8_t  id;
+  uint8_t  switch1State = digitalRead(SWITCH_1);
+  uint8_t  switch2State = digitalRead(SWITCH_2);
+  uint8_t  switch3State = digitalRead(SWITCH_3);
 
   if (switch1State == HIGH) { // ENROLL
     resp = getPendingUser();
@@ -89,6 +91,11 @@ void loop() {
       Serial.println(F("SELECT MODE..."));
       return;
     }
+
+    Serial.print(F("Username enrolled: "));
+    Serial.print((USERNAME));
+    USERNAME = "";
+    Serial.println();
     Serial.println(F("SELECT MODE..."));
 
   } else if (switch2State == HIGH || switch3State == HIGH) { // IDENTIFY IN OR OUT
@@ -117,6 +124,11 @@ void loop() {
         return;
       }
     }
+
+    Serial.print(F("Username enrolled: "));
+    Serial.print((USERNAME));
+    USERNAME = "";
+    Serial.println();
     Serial.println(F("SELECT MODE..."));
   } else {}
 }

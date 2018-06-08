@@ -1,12 +1,12 @@
 void getSignature() {
-  const char * key = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
-  String value;
+  uint8_t i = 0;
   uint8_t * result;
-  int i = 0;
-  SIGNATURE.reserve(32);
+  String value = "";
+  const char * key = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
+
   SIGNATURE = "";
-  value.reserve(58);
-  value = "";
+
+  Serial.print(F("\n"));
   Serial.print(F("Compile date: "));
   Serial.print(COMPILE_DATE);
   Serial.print(F("\n"));

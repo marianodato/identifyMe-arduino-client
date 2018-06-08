@@ -1,9 +1,22 @@
-int8_t parseResponseInt(String field) {
-  int8_t i = 0;
-  int8_t index = 0;
-  String temp = "";
+String getCommonBody() {
+  String body = "";
+  body = "{\"serialNumber\": \"";
+  body += SERIAL_NUMBER;
+  body += "\", \"atMacAddress\": \"";
+  body += AT_MAC_ADDRESS;
+  body += "\", \"compileDate\": \"";
+  body += COMPILE_DATE;
+  body += "\", \"signature\": \"";
+  body += SIGNATURE;
+  return body;
+}
+
+uint16_t parseResponseInt(String field) {
   char c;
-  int8_t  resp = 0;
+  uint16_t i = 0;
+  String temp = "";
+  uint16_t index = 0;
+  uint16_t  resp = 0;
 
   index = API_RESPONSE.indexOf(field);
 
@@ -11,7 +24,7 @@ int8_t parseResponseInt(String field) {
     return -1;
   }
 
-  for (i = index + (field.length() - 1); i++; ) {
+  for (i = (index + field.length()); ; i++) {
     c = API_RESPONSE[i];
     if (c == ',') {
       break;
@@ -29,11 +42,10 @@ int8_t parseResponseInt(String field) {
 }
 
 String parseResponseString(String field) {
-  int8_t i = 0;
-  int8_t index = 0;
-  String temp = "";
   char c;
-  int8_t  resp = 0;
+  uint16_t i = 0;
+  String temp = "";
+  uint16_t index = 0;
 
   index = API_RESPONSE.indexOf(field);
 
@@ -41,9 +53,9 @@ String parseResponseString(String field) {
     return "";
   }
 
-  for (i = index + (field.length()); i++; ) {
+  for (i = (index + field.length()); ; i++) {
     c = API_RESPONSE[i];
-    if (c == '\"') {
+    if (c == '"') {
       break;
     }
     temp += c;
@@ -53,14 +65,15 @@ String parseResponseString(String field) {
 
 int8_t getPendingUser() {
   String temp = "";
-  int8_t  resp = 0;
+  uint16_t  resp = 0;
   char * httpMethod = "GET ";
   char * httpUri = "/users?fingerprintStatus=pending";
   String body = getCommonBody();
   body += "\"}";
-  ID = 0;
+
+  USER_ID = 0;
+  USERNAME = "";
   ENROLL_MODE_FINGERPRINT_ID = 0;
-  NAME = "";
 
   resp = httpsRequest(httpMethod, httpUri, body);
   if (resp != 0) {
@@ -69,25 +82,25 @@ int8_t getPendingUser() {
 
   if (API_RESPONSE_STATUS.indexOf("200") < 0) {
     Serial.println(F("Bad Response Status"));
-    API_RESPONSE_STATUS = "";
     API_RESPONSE = "";
+    API_RESPONSE_STATUS = "";
     return -1;
   }
 
   resp = parseResponseInt("\"id\":");
 
-  Serial.print(F("Id: "));
+  Serial.print(F("UserId: "));
   Serial.println(resp);
 
   if (resp == -1) {
-    ID = 0;
-    API_RESPONSE_STATUS = "";
+    USER_ID = 0;
     API_RESPONSE = "";
+    API_RESPONSE_STATUS = "";
     Serial.println(F("Cannot parse field: id!"));
     return -1;
   }
 
-  ID = resp;
+  USER_ID = resp;
 
   resp = parseResponseInt("\"fingerprintId\":");
 
@@ -95,35 +108,35 @@ int8_t getPendingUser() {
   Serial.println(resp);
 
   if (resp == -1) {
-    ID = 0;
-    ENROLL_MODE_FINGERPRINT_ID = 0;
-    API_RESPONSE_STATUS = "";
+    USER_ID = 0;
     API_RESPONSE = "";
+    API_RESPONSE_STATUS = "";
+    ENROLL_MODE_FINGERPRINT_ID = 0;
     Serial.println(F("Cannot parse field: fingerprintId!"));
     return -1;
   }
 
   ENROLL_MODE_FINGERPRINT_ID = resp;
 
-  temp = parseResponseString("\"name\":");
+  temp = parseResponseString("\"username\":\"");
 
-  Serial.print(F("Name: "));
+  Serial.print(F("Username: "));
   Serial.println(temp);
 
   if (temp == "") {
-    ID = 0;
-    ENROLL_MODE_FINGERPRINT_ID = 0;
-    NAME = "";
-    API_RESPONSE_STATUS = "";
+    USER_ID = 0;
+    USERNAME = "";
     API_RESPONSE = "";
-    Serial.println(F("Cannot parse field: name!"));
+    API_RESPONSE_STATUS = "";
+    ENROLL_MODE_FINGERPRINT_ID = 0;
+    Serial.println(F("Cannot parse field: username!"));
     return -1;
   }
 
-  NAME = temp;
+  USERNAME = temp;
 
-  API_RESPONSE_STATUS = "";
   API_RESPONSE = "";
+  API_RESPONSE_STATUS = "";
   return 0;
 }
 
@@ -131,43 +144,45 @@ int8_t putEnrolledUser() {
   int8_t  resp = 0;
   char * httpMethod = "PUT ";
   String httpUri = "/users/";
-  httpUri += ID;
+  httpUri += USER_ID;
   String body = getCommonBody();
   body += "\", \"fingerprintStatus\": \"enrolled";
   body += "\"}";
 
   resp = httpsRequest(httpMethod, httpUri, body);
   if (resp != 0) {
-    ID = 0;
-    NAME = "";
+    USER_ID = 0;
+    USERNAME = "";
     return resp;
   }
 
   if (API_RESPONSE_STATUS.indexOf("200") < 0) {
     Serial.println(F("Bad Response Status"));
-    ID = 0;
-    NAME = "";
-    API_RESPONSE_STATUS = "";
+    USER_ID = 0;
+    USERNAME = "";
     API_RESPONSE = "";
+    API_RESPONSE_STATUS = "";
     return -1;
   }
 
-  ID = 0;
-  ENROLL_MODE_FINGERPRINT_ID = 0;
-  NAME = "";
-  API_RESPONSE_STATUS = "";
+  USER_ID = 0;
   API_RESPONSE = "";
+  API_RESPONSE_STATUS = "";
+  ENROLL_MODE_FINGERPRINT_ID = 0;
   return 0;
 }
 
 int8_t postUserRegistrationRecord() {
+  String temp = "";
   int8_t  resp = 0;
   char * httpMethod = "POST ";
-  String httpUri = "/users/registration/records";
+  char * httpUri = "/users/registration/records";
   String body = getCommonBody();
   body += "\", \"fingerprintId\": ";
   body += IDENTIFY_MODE_FINGERPRINT_ID;
   body += "}";
+
+  USERNAME = "";
 
   resp = httpsRequest(httpMethod, httpUri, body);
   if (resp != 0) {
@@ -181,17 +196,34 @@ int8_t postUserRegistrationRecord() {
     return -1;
   }
 
+  temp = parseResponseString("\"userUsername\":\"");
+
+  Serial.print(F("UserUsername: "));
+  Serial.println(temp);
+
+  if (temp == "") {
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    USERNAME = "";
+    Serial.println(F("Cannot parse field: userUsername!"));
+    return -1;
+  }
+
+  USERNAME = temp;
+
   IDENTIFY_MODE_FINGERPRINT_ID = 0;
   return 0;
 }
 
 int8_t putUserRegistrationRecord() {
+  String temp = "";
   int8_t  resp = 0;
   char * httpMethod = "PUT ";
   String httpUri = "/users/registration/records/";
   httpUri += IDENTIFY_MODE_FINGERPRINT_ID;
   String body = getCommonBody();
   body += "\"}";
+
+  USERNAME = "";
 
   resp = httpsRequest(httpMethod, httpUri, body);
   if (resp != 0) {
@@ -205,31 +237,33 @@ int8_t putUserRegistrationRecord() {
     return -1;
   }
 
+  temp = parseResponseString("\"userUsername\":\"");
+
+  Serial.print(F("UserUsername: "));
+  Serial.println(temp);
+
+  if (temp == "") {
+    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    USERNAME = "";
+    Serial.println(F("Cannot parse field: userUsername!"));
+    return -1;
+  }
+
+  USERNAME = temp;
+
   IDENTIFY_MODE_FINGERPRINT_ID = 0;
   return 0;
 }
 
-String getCommonBody() {
-  String body;
-  body = "{\"serialNumber\": \"";
-  body += SERIAL_NUMBER;
-  body += "\", \"atMacAddress\": \"";
-  body += AT_MAC_ADDRESS;
-  body += "\", \"compileDate\": \"";
-  body += COMPILE_DATE;
-  body += "\", \"signature\": \"";
-  body += SIGNATURE;
-  return body;
-}
-
 int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
-  const char * host = "identifyme-backend-api.herokuapp.com";
-  const int port = 443;
-  const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
-  bool foundBlankLine = false;
-  unsigned long timeout;
   char c;
   bool first = true;
+  const int port = 443;
+  unsigned long timeout;
+  bool foundBlankLine = false;
+  const char * host = "identifyme-backend-api.herokuapp.com";
+  const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
+
   API_RESPONSE = "";
   API_RESPONSE_STATUS = "";
 
@@ -264,6 +298,7 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
                "User-Agent: NodeMCU\r\n" +
                "Content-length: " + body.length() + "\r\n\r\n" +
                body);
+
   timeout = millis();
   while (client.available() == 0) {
     if (millis() - timeout > TIMEOUT_WIFI) {
@@ -329,9 +364,9 @@ void connectToWifi() {
     Serial.print(".");
   }
 
-  Serial.println("");
+  Serial.println();
   Serial.println(F("WiFi connected"));
-  Serial.println(F("IP address: "));
-  Serial.println(WiFi.localIP());
+  Serial.print(F("IP address: "));
+  Serial.print(WiFi.localIP());
   return;
 }
