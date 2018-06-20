@@ -1,5 +1,6 @@
 int8_t  getFingerprintEnroll(uint8_t  id) {
   int8_t  p = 0;
+  const uint8_t kSlot = 2;
 
   Serial.print(F("Waiting for valid finger to enroll as #"));
   Serial.println(id);
@@ -14,7 +15,7 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
   }
 
   Serial.println(F("Remove finger"));
-  delay(2000);
+  delay(gkBigTimeout);
   while (p != FINGERPRINT_NOFINGER) {
     p = finger.getImage();
   }
@@ -28,7 +29,7 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
     return -1;
   }
 
-  p = imageToTemplate(2);
+  p = imageToTemplate(kSlot);
 
   if (p != FINGERPRINT_OK) {
     return -1;
@@ -57,7 +58,8 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
 
 int8_t  getFingerprintIDez() {
   int8_t  p = 0;
-  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+  const uint8_t kSlot = 1;
+  gIdentifyModeFingerprintId = 0;
 
   p = getImage();
 
@@ -65,7 +67,7 @@ int8_t  getFingerprintIDez() {
     return -1;
   }
 
-  p = imageToTemplate(1);
+  p = imageToTemplate(kSlot);
 
   if (p != FINGERPRINT_OK) {
     return -1;
@@ -86,7 +88,7 @@ int8_t  getFingerprintIDez() {
   Serial.print(finger.fingerID);
   Serial.print(F(" with confidence of "));
   Serial.println(finger.confidence);
-  IDENTIFY_MODE_FINGERPRINT_ID = finger.fingerID;
+  gIdentifyModeFingerprintId = finger.fingerID;
   return finger.fingerID;
 }
 
@@ -113,7 +115,7 @@ int8_t getImage() {
         Serial.println(F("Unknown error"));
         break;
     }
-    if ((millis() - timeout) > TIMEOUT_FINGERPRINT) {
+    if ((millis() - timeout) > gkTimeoutFingerprint) {
       Serial.println(F("Fingerprint timeout"));
       break;
     }

@@ -1,26 +1,27 @@
 void getSignature() {
   uint8_t i = 0;
-  uint8_t * result;
+  uint8_t * hash;
   String value = "";
-  const char * key = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
+  const uint8_t kKeySize = 32;
+  const char * kHexaChars = "0123456789abcdef";
 
-  SIGNATURE = "";
+  gSignature = "";
 
   Serial.print(F("\n"));
   Serial.print(F("Compile date: "));
-  Serial.print(COMPILE_DATE);
+  Serial.print(gkCompileDate);
   Serial.print(F("\n"));
 
-  Sha256.initHmac((uint8_t * ) key, 32);
-  value = String(SERIAL_NUMBER) + AT_MAC_ADDRESS + COMPILE_DATE;
+  Sha256.initHmac((uint8_t * ) gkSignatureKey, kKeySize);
+  value = String(gkSerialNumber) + gkAtMacAddress + gkCompileDate;
   Sha256.print(value);
-  result = Sha256.resultHmac();
+  hash = Sha256.resultHmac();
   Serial.print(F("Got: "));
-  for (i = 0; i < 32; i++) {
-    SIGNATURE += ("0123456789abcdef"[result[i] >> 4]);
-    SIGNATURE += ("0123456789abcdef"[result[i] & 0xf]);
+  for (i = 0; i < kKeySize; i++) {
+    gSignature += (kHexaChars[hash[i] >> 4]);
+    gSignature += (kHexaChars[hash[i] & 0xf]);
   }
-  Serial.print(SIGNATURE);
+  Serial.print(gSignature);
   Serial.print(F("\n"));
   return;
 }

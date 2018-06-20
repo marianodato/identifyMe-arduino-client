@@ -1,53 +1,70 @@
-#include <SoftwareSerial.h>
+#include <sha256.h>
 #include <ESP8266WiFi.h>
+#include <SoftwareSerial.h>
 #include <Adafruit_Fingerprint.h>
-#include "sha256.h"
 
-#define SWITCH_1 D1
-#define SWITCH_2 D2
-#define SWITCH_3 D4
-#define TIMEOUT_WIFI 10000
-#define TIMEOUT_FINGERPRINT 10000
+#define BUTTON_1 D1
+#define BUTTON_2 D2
+#define BUTTON_3 D4
+#define FINGERPRINT_TX D5 // FINGERPRINT YELLOW CABLE
+#define FINGERPRINT_RX D6 // FINGERPRINT BLUE CABLE
 
-SoftwareSerial fingerprintSerial(D5, D6); // YELLOW CABLE, BLUE CABLE
-Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial, 00140042);
+uint16_t gUserId = 0;
+String gUsername = "";
+String gSignature = "";
+String gApiResponse = "";
+String gApiResponseStatus = "";
+uint8_t gEnrollModeFingerprintId = 0;
+uint8_t gIdentifyModeFingerprintId = 0;
 
-uint16_t USER_ID;
-String USERNAME;
-String SIGNATURE;
-String API_RESPONSE;
-String API_RESPONSE_STATUS;
-uint8_t ENROLL_MODE_FINGERPRINT_ID;
-uint8_t IDENTIFY_MODE_FINGERPRINT_ID;
-const char * SERIAL_NUMBER = "008BD46B";
-const char * AT_MAC_ADDRESS = "68:C6:3A:8B:D4:6B";
-const char * COMPILE_DATE = __DATE__ " " __TIME__;
+const char * gkSerialNumber = "008BD46B";
+const char * gkAtMacAddress = "68:C6:3A:8B:D4:6B";
+const char * gkCompileDate = __DATE__ " " __TIME__;
+
+const uint16_t gkBigTimeout = 2000;
+const uint16_t gkSmallTimeout = 500;
+const uint16_t gkTimeoutWifi = 10000;
+const uint16_t gkTimeoutFingerprint = 10000;
+
+const int gkFingerprintSignarute = 00140042;
+const uint16_t gkSerialTransmissionSpeed = 9600;
+const uint16_t gkFingerprintTransmissionSpeed = 57600;
+
+const char * gkWifiSsid = "TH14";
+const char * gkWifiPassword = "TheInvincibles26W12D0L";
+const char * gkSignatureKey = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
+
+const uint16_t gkHttpsPort = 443;
+const char * gkHttpGetMethod = "GET ";
+const char * gkHttpPutMethod = "PUT ";
+const char * gkHttpPostMethod = "POST ";
+const char * gkHttpPostStatusOk = "201";
+const char * gkHttpUserAgent = "NodeMCU";
+const char * gkHttpProtocol = "HTTP/1.0";
+const char * gkHttpGetPutStatusOk = "200";
+const char * gkHttpsHost = "identifyme-backend-api.herokuapp.com";
+const char * gkHttpsHostFingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
+
+SoftwareSerial fingerprintSerial(FINGERPRINT_TX, FINGERPRINT_RX);
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial, gkFingerprintSignarute);
 
 void setup() {
-  USER_ID = 0;
-  USERNAME = "";
-  SIGNATURE = "";
-  API_RESPONSE = "";
-  API_RESPONSE_STATUS = "";
-  ENROLL_MODE_FINGERPRINT_ID = 0;
-  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+  pinMode(BUTTON_1, INPUT);
+  pinMode(BUTTON_2, INPUT);
+  pinMode(BUTTON_3, INPUT);
 
-  pinMode(SWITCH_1, INPUT);
-  pinMode(SWITCH_2, INPUT);
-  pinMode(SWITCH_3, INPUT);
-
-  Serial.begin(9600);
+  Serial.begin(gkSerialTransmissionSpeed);
   while (!Serial);
 
-  finger.begin(57600);
+  finger.begin(gkFingerprintTransmissionSpeed);
 
   Serial.println(F("\n\nFINAL PROJECT"));
   if (finger.verifyPassword()) {
     Serial.println(F("Found fingerprint sensor!"));
   } else {
     Serial.println(F("Did not find fingerprint sensor :("));
-    while (1) {
-      delay(500);
+    while (true) {
+      delay(gkSmallTimeout);
     }
   }
 
@@ -58,9 +75,9 @@ void setup() {
 
 void loop() {
   int8_t  resp = 0;
-  uint8_t  switch1State = digitalRead(SWITCH_1);
-  uint8_t  switch2State = digitalRead(SWITCH_2);
-  uint8_t  switch3State = digitalRead(SWITCH_3);
+  uint8_t  switch1State = digitalRead(BUTTON_1);
+  uint8_t  switch2State = digitalRead(BUTTON_2);
+  uint8_t  switch3State = digitalRead(BUTTON_3);
 
   if (switch1State == HIGH) { // ENROLL
     resp = getPendingUser();
@@ -72,8 +89,8 @@ void loop() {
 
     Serial.println(F("Ready to enroll a fingerprint!"));
     Serial.print(F("Enrolling ID #"));
-    Serial.println(ENROLL_MODE_FINGERPRINT_ID);
-    resp = getFingerprintEnroll(ENROLL_MODE_FINGERPRINT_ID);
+    Serial.println(gEnrollModeFingerprintId);
+    resp = getFingerprintEnroll(gEnrollModeFingerprintId);
 
     if (resp != 0) {
       Serial.println(F("Error enrolling fingerprint"));
@@ -85,16 +102,16 @@ void loop() {
     if (resp != 0) {
       Serial.println(F("Error updating fingerprint status"));
       Serial.println(F("Deleting ID #"));
-      Serial.println(ENROLL_MODE_FINGERPRINT_ID);
-      deleteFingerprint(ENROLL_MODE_FINGERPRINT_ID);
-      ENROLL_MODE_FINGERPRINT_ID = 0;
+      Serial.println(gEnrollModeFingerprintId);
+      deleteFingerprint(gEnrollModeFingerprintId);
+      gEnrollModeFingerprintId = 0;
       Serial.println(F("SELECT MODE..."));
       return;
     }
 
     Serial.print(F("Username enrolled: "));
-    Serial.print((USERNAME));
-    USERNAME = "";
+    Serial.print((gUsername));
+    gUsername = "";
     Serial.println();
     Serial.println(F("SELECT MODE..."));
 
@@ -104,7 +121,7 @@ void loop() {
 
     if (resp <= 0) {
       Serial.println(F("Error identifying fingerprint"));
-      IDENTIFY_MODE_FINGERPRINT_ID = 0;
+      gIdentifyModeFingerprintId = 0;
       Serial.println(F("SELECT MODE..."));
       return;
     }
@@ -126,8 +143,8 @@ void loop() {
     }
 
     Serial.print(F("Username enrolled: "));
-    Serial.print((USERNAME));
-    USERNAME = "";
+    Serial.print((gUsername));
+    gUsername = "";
     Serial.println();
     Serial.println(F("SELECT MODE..."));
   } else {}

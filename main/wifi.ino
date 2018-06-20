@@ -1,13 +1,13 @@
 String getCommonBody() {
   String body = "";
   body = "{\"serialNumber\": \"";
-  body += SERIAL_NUMBER;
+  body += gkSerialNumber;
   body += "\", \"atMacAddress\": \"";
-  body += AT_MAC_ADDRESS;
+  body += gkAtMacAddress;
   body += "\", \"compileDate\": \"";
-  body += COMPILE_DATE;
+  body += gkCompileDate;
   body += "\", \"signature\": \"";
-  body += SIGNATURE;
+  body += gSignature;
   return body;
 }
 
@@ -18,14 +18,14 @@ uint16_t parseResponseInt(String field) {
   uint16_t index = 0;
   uint16_t  resp = 0;
 
-  index = API_RESPONSE.indexOf(field);
+  index = gApiResponse.indexOf(field);
 
   if (index < 0) {
     return -1;
   }
 
   for (i = (index + field.length()); ; i++) {
-    c = API_RESPONSE[i];
+    c = gApiResponse[i];
     if (c == ',') {
       break;
     }
@@ -47,14 +47,14 @@ String parseResponseString(String field) {
   String temp = "";
   uint16_t index = 0;
 
-  index = API_RESPONSE.indexOf(field);
+  index = gApiResponse.indexOf(field);
 
   if (index < 0) {
     return "";
   }
 
   for (i = (index + field.length()); ; i++) {
-    c = API_RESPONSE[i];
+    c = gApiResponse[i];
     if (c == '"') {
       break;
     }
@@ -66,24 +66,23 @@ String parseResponseString(String field) {
 int8_t getPendingUser() {
   String temp = "";
   uint16_t  resp = 0;
-  char * httpMethod = "GET ";
-  char * httpUri = "/users?fingerprintStatus=pending";
   String body = getCommonBody();
   body += "\"}";
+  String httpUri = "/users?fingerprintStatus=pending";
 
-  USER_ID = 0;
-  USERNAME = "";
-  ENROLL_MODE_FINGERPRINT_ID = 0;
+  gUserId = 0;
+  gUsername = "";
+  gEnrollModeFingerprintId = 0;
 
-  resp = httpsRequest(httpMethod, httpUri, body);
+  resp = httpsRequest(gkHttpGetMethod, httpUri, body);
   if (resp != 0) {
     return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
+  if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
     Serial.println(F("Bad Response Status"));
-    API_RESPONSE = "";
-    API_RESPONSE_STATUS = "";
+    gApiResponse = "";
+    gApiResponseStatus = "";
     return -1;
   }
 
@@ -93,14 +92,14 @@ int8_t getPendingUser() {
   Serial.println(resp);
 
   if (resp == -1) {
-    USER_ID = 0;
-    API_RESPONSE = "";
-    API_RESPONSE_STATUS = "";
+    gUserId = 0;
+    gApiResponse = "";
+    gApiResponseStatus = "";
     Serial.println(F("Cannot parse field: id!"));
     return -1;
   }
 
-  USER_ID = resp;
+  gUserId = resp;
 
   resp = parseResponseInt("\"fingerprintId\":");
 
@@ -108,15 +107,15 @@ int8_t getPendingUser() {
   Serial.println(resp);
 
   if (resp == -1) {
-    USER_ID = 0;
-    API_RESPONSE = "";
-    API_RESPONSE_STATUS = "";
-    ENROLL_MODE_FINGERPRINT_ID = 0;
+    gUserId = 0;
+    gApiResponse = "";
+    gApiResponseStatus = "";
+    gEnrollModeFingerprintId = 0;
     Serial.println(F("Cannot parse field: fingerprintId!"));
     return -1;
   }
 
-  ENROLL_MODE_FINGERPRINT_ID = resp;
+  gEnrollModeFingerprintId = resp;
 
   temp = parseResponseString("\"username\":\"");
 
@@ -124,75 +123,73 @@ int8_t getPendingUser() {
   Serial.println(temp);
 
   if (temp == "") {
-    USER_ID = 0;
-    USERNAME = "";
-    API_RESPONSE = "";
-    API_RESPONSE_STATUS = "";
-    ENROLL_MODE_FINGERPRINT_ID = 0;
+    gUserId = 0;
+    gUsername = "";
+    gApiResponse = "";
+    gApiResponseStatus = "";
+    gEnrollModeFingerprintId = 0;
     Serial.println(F("Cannot parse field: username!"));
     return -1;
   }
 
-  USERNAME = temp;
+  gUsername = temp;
 
-  API_RESPONSE = "";
-  API_RESPONSE_STATUS = "";
+  gApiResponse = "";
+  gApiResponseStatus = "";
   return 0;
 }
 
 int8_t putEnrolledUser() {
   int8_t  resp = 0;
-  char * httpMethod = "PUT ";
   String httpUri = "/users/";
-  httpUri += USER_ID;
+  httpUri += gUserId;
   String body = getCommonBody();
   body += "\", \"fingerprintStatus\": \"enrolled";
   body += "\"}";
 
-  resp = httpsRequest(httpMethod, httpUri, body);
+  resp = httpsRequest(gkHttpPutMethod, httpUri, body);
   if (resp != 0) {
-    USER_ID = 0;
-    USERNAME = "";
+    gUserId = 0;
+    gUsername = "";
     return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
+  if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
     Serial.println(F("Bad Response Status"));
-    USER_ID = 0;
-    USERNAME = "";
-    API_RESPONSE = "";
-    API_RESPONSE_STATUS = "";
+    gUserId = 0;
+    gUsername = "";
+    gApiResponse = "";
+    gApiResponseStatus = "";
     return -1;
   }
 
-  USER_ID = 0;
-  API_RESPONSE = "";
-  API_RESPONSE_STATUS = "";
-  ENROLL_MODE_FINGERPRINT_ID = 0;
+  gUserId = 0;
+  gApiResponse = "";
+  gApiResponseStatus = "";
+  gEnrollModeFingerprintId = 0;
   return 0;
 }
 
 int8_t postUserRegistrationRecord() {
   String temp = "";
   int8_t  resp = 0;
-  char * httpMethod = "POST ";
-  char * httpUri = "/users/registration/records";
   String body = getCommonBody();
   body += "\", \"fingerprintId\": ";
-  body += IDENTIFY_MODE_FINGERPRINT_ID;
+  body += gIdentifyModeFingerprintId;
   body += "}";
+  String httpUri = "/users/registration/records";
 
-  USERNAME = "";
+  gUsername = "";
 
-  resp = httpsRequest(httpMethod, httpUri, body);
+  resp = httpsRequest(gkHttpPostMethod, httpUri, body);
   if (resp != 0) {
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    gIdentifyModeFingerprintId = 0;
     return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("201") < 0) {
+  if (gApiResponseStatus.indexOf(gkHttpPostStatusOk) < 0) {
     Serial.println(F("Bad Response Status"));
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    gIdentifyModeFingerprintId = 0;
     return -1;
   }
 
@@ -202,38 +199,37 @@ int8_t postUserRegistrationRecord() {
   Serial.println(temp);
 
   if (temp == "") {
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
-    USERNAME = "";
+    gIdentifyModeFingerprintId = 0;
+    gUsername = "";
     Serial.println(F("Cannot parse field: userUsername!"));
     return -1;
   }
 
-  USERNAME = temp;
+  gUsername = temp;
 
-  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+  gIdentifyModeFingerprintId = 0;
   return 0;
 }
 
 int8_t putUserRegistrationRecord() {
   String temp = "";
   int8_t  resp = 0;
-  char * httpMethod = "PUT ";
-  String httpUri = "/users/registration/records/";
-  httpUri += IDENTIFY_MODE_FINGERPRINT_ID;
   String body = getCommonBody();
   body += "\"}";
+  String httpUri = "/users/registration/records/";
+  httpUri += gIdentifyModeFingerprintId;
 
-  USERNAME = "";
+  gUsername = "";
 
-  resp = httpsRequest(httpMethod, httpUri, body);
+  resp = httpsRequest(gkHttpPutMethod, httpUri, body);
   if (resp != 0) {
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    gIdentifyModeFingerprintId = 0;
     return resp;
   }
 
-  if (API_RESPONSE_STATUS.indexOf("200") < 0) {
+  if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
     Serial.println(F("Bad Response Status"));
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
+    gIdentifyModeFingerprintId = 0;
     return -1;
   }
 
@@ -243,41 +239,38 @@ int8_t putUserRegistrationRecord() {
   Serial.println(temp);
 
   if (temp == "") {
-    IDENTIFY_MODE_FINGERPRINT_ID = 0;
-    USERNAME = "";
+    gIdentifyModeFingerprintId = 0;
+    gUsername = "";
     Serial.println(F("Cannot parse field: userUsername!"));
     return -1;
   }
 
-  USERNAME = temp;
+  gUsername = temp;
 
-  IDENTIFY_MODE_FINGERPRINT_ID = 0;
+  gIdentifyModeFingerprintId = 0;
   return 0;
 }
 
-int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
+int8_t  httpsRequest(const char * httpMethod, String httpUri, String body) {
   char c;
   bool first = true;
-  const int port = 443;
   unsigned long timeout;
   bool foundBlankLine = false;
-  const char * host = "identifyme-backend-api.herokuapp.com";
-  const char * fingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
 
-  API_RESPONSE = "";
-  API_RESPONSE_STATUS = "";
+  gApiResponse = "";
+  gApiResponseStatus = "";
 
   Serial.print(F("Connecting to "));
-  Serial.println(host);
+  Serial.println(gkHttpsHost);
 
   WiFiClientSecure client;
-  if (!client.connect(host, port)) {
+  if (!client.connect(gkHttpsHost, gkHttpsPort)) {
     Serial.println(F("Error connecting to host!"));
     connectToWifi();
     return -1;
   }
 
-  if (client.verify(fingerprint, host)) {
+  if (client.verify(gkHttpsHostFingerprint, gkHttpsHost)) {
     Serial.println(F("The certificate is valid!"));
   } else {
     Serial.println(F("The certificate is invalid!"));
@@ -286,22 +279,22 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
   }
 
   Serial.print(F("URL of request: https://"));
-  Serial.print(host);
+  Serial.print(gkHttpsHost);
   Serial.print(F(":"));
-  Serial.print(port);
+  Serial.print(gkHttpsPort);
   Serial.println(httpUri);
   Serial.print(F("Body: "));
   Serial.println(body);
 
-  client.print(String(httpMethod) + httpUri + " HTTP/1.0\r\n" +
-               "Host: " + host + "\r\n" +
-               "User-Agent: NodeMCU\r\n" +
+  client.print(String(httpMethod) + httpUri + " " + gkHttpProtocol + "\r\n" +
+               "Host: " + gkHttpsHost + "\r\n" +
+               "User-Agent: " + gkHttpUserAgent + "\r\n" +
                "Content-length: " + body.length() + "\r\n\r\n" +
                body);
 
   timeout = millis();
   while (client.available() == 0) {
-    if (millis() - timeout > TIMEOUT_WIFI) {
+    if (millis() - timeout > gkTimeoutWifi) {
       Serial.println(F("Exceeded the waiting time!"));
       client.stop();
       return -1;
@@ -316,19 +309,19 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
   while (client.available()) {
     c = client.read();
     Serial.print(c);
-    API_RESPONSE += c;
+    gApiResponse += c;
     if (c == '\n') {
       if (first) {
-        API_RESPONSE_STATUS = API_RESPONSE;
+        gApiResponseStatus = gApiResponse;
         first = false;
       }
-      if (API_RESPONSE.equals("\r\n")) {
-        API_RESPONSE = "";
+      if (gApiResponse.equals("\r\n")) {
+        gApiResponse = "";
         foundBlankLine = true;
       } else {
         if (foundBlankLine == true) {
         } else {
-          API_RESPONSE = "";
+          gApiResponse = "";
         }
       }
     }
@@ -340,27 +333,24 @@ int8_t  httpsRequest(char * httpMethod, String httpUri, String body) {
 
   Serial.println();
   Serial.println(F("Response Status: "));
-  Serial.println(API_RESPONSE_STATUS);
+  Serial.println(gApiResponseStatus);
 
   Serial.println(F("Response: "));
-  Serial.println(API_RESPONSE);
+  Serial.println(gApiResponse);
   Serial.println();
   return 0;
 }
 
 void connectToWifi() {
-  const char * ssid = "TH14";
-  const char * password = "TheInvincibles26W12D0L";
-
   Serial.println();
   Serial.print(F("Connecting to wifi: "));
-  Serial.println(ssid);
+  Serial.println(gkWifiSsid);
 
   WiFi.mode(WIFI_STA); // CLIENT MODE
-  WiFi.begin(ssid, password);
+  WiFi.begin(gkWifiSsid, gkWifiPassword);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(gkSmallTimeout);
     Serial.print(".");
   }
 
