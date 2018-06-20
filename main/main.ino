@@ -1,21 +1,17 @@
+#include <Wire.h>
 #include <sha256.h>
 #include <ESP8266WiFi.h>
 #include <SoftwareSerial.h>
+#include <LiquidCrystal_I2C.h>
 #include <Adafruit_Fingerprint.h>
 
 #define BUTTON_1 D1
 #define BUTTON_2 D2
 #define BUTTON_3 D4
+#define LCD_SCL_PIN D3
+#define LCD_SDA_PIN D7
 #define FINGERPRINT_TX D5 // FINGERPRINT YELLOW CABLE
 #define FINGERPRINT_RX D6 // FINGERPRINT BLUE CABLE
-
-uint16_t gUserId = 0;
-String gUsername = "";
-String gSignature = "";
-String gApiResponse = "";
-String gApiResponseStatus = "";
-uint8_t gEnrollModeFingerprintId = 0;
-uint8_t gIdentifyModeFingerprintId = 0;
 
 const char * gkSerialNumber = "008BD46B";
 const char * gkAtMacAddress = "68:C6:3A:8B:D4:6B";
@@ -24,6 +20,7 @@ const char * gkCompileDate = __DATE__ " " __TIME__;
 const uint16_t gkBigTimeout = 2000;
 const uint16_t gkSmallTimeout = 500;
 const uint16_t gkTimeoutWifi = 10000;
+const uint16_t gkTimeoutScroll = 1000;
 const uint16_t gkTimeoutFingerprint = 10000;
 
 const int gkFingerprintSignarute = 00140042;
@@ -45,6 +42,27 @@ const char * gkHttpGetPutStatusOk = "200";
 const char * gkHttpsHost = "identifyme-backend-api.herokuapp.com";
 const char * gkHttpsHostFingerprint = "08 3B 71 72 02 43 6E CA ED 42 86 93 BA 7E DF 81 C4 BC 62 30"; // SHA1
 
+const uint8_t gkLcdFiles = 2;
+const uint8_t gkLcdColumns = 16;
+const uint8_t gkLcdAddress = 0x27; // For a 16 chars and 2 line display
+const uint8_t gkLcdScrollingSpaces = 1;
+const char gkLcdText[] = "identifyMe     ";
+const uint8_t gkLcdTextSize = sizeof(gkLcdText) - 1;
+
+bool gLoopSetTime = true;
+char gLcdBuffer[gkLcdColumns];
+unsigned long gLoopTimeout = 0;
+int16_t gLcdIndex = -gkLcdTextSize;
+
+uint16_t gUserId = 0;
+String gUsername = "";
+String gSignature = "";
+String gApiResponse = "";
+String gApiResponseStatus = "";
+uint8_t gEnrollModeFingerprintId = 0;
+uint8_t gIdentifyModeFingerprintId = 0;
+
+LiquidCrystal_I2C lcd(gkLcdAddress, gkLcdColumns, gkLcdFiles);
 SoftwareSerial fingerprintSerial(FINGERPRINT_TX, FINGERPRINT_RX);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&fingerprintSerial, gkFingerprintSignarute);
 
@@ -52,6 +70,15 @@ void setup() {
   pinMode(BUTTON_1, INPUT);
   pinMode(BUTTON_2, INPUT);
   pinMode(BUTTON_3, INPUT);
+
+  Wire.begin(LCD_SDA_PIN, LCD_SCL_PIN);
+  lcd.begin(gkLcdColumns, gkLcdFiles);
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(3, 0);
+  lcd.print("identifyMe");
+  lcd.setCursor(2, 1);
+  lcd.print("Iniciando...");
 
   Serial.begin(gkSerialTransmissionSpeed);
   while (!Serial);
@@ -71,6 +98,7 @@ void setup() {
   connectToWifi();
   getSignature();
   Serial.println(F("SELECT MODE..."));
+  lcd.clear();
 }
 
 void loop() {
@@ -78,6 +106,18 @@ void loop() {
   uint8_t  switch1State = digitalRead(BUTTON_1);
   uint8_t  switch2State = digitalRead(BUTTON_2);
   uint8_t  switch3State = digitalRead(BUTTON_3);
+
+  if (gLoopSetTime)
+  {
+    gLoopTimeout = millis();
+    gLoopSetTime = false;
+  }
+
+  if (millis() - gLoopTimeout > gkTimeoutScroll)
+  {
+    lcdScroll();
+    gLoopSetTime = true;
+  }
 
   if (switch1State == HIGH) { // ENROLL
     resp = getPendingUser();
