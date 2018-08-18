@@ -80,7 +80,7 @@ int8_t getPendingUser() {
   }
 
   if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
-    Serial.println(F("Bad Response Status"));
+    Serial.println(F("Bad Response Status!"));
     gApiResponse = "";
     gApiResponseStatus = "";
     return -1;
@@ -155,7 +155,7 @@ int8_t putEnrolledUser() {
   }
 
   if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
-    Serial.println(F("Bad Response Status"));
+    Serial.println(F("Bad Response Status!"));
     gUserId = 0;
     gUsername = "";
     gApiResponse = "";
@@ -188,7 +188,7 @@ int8_t postUserRegistrationRecord() {
   }
 
   if (gApiResponseStatus.indexOf(gkHttpPostStatusOk) < 0) {
-    Serial.println(F("Bad Response Status"));
+    Serial.println(F("Bad Response Status!"));
     gIdentifyModeFingerprintId = 0;
     return -1;
   }
@@ -228,7 +228,7 @@ int8_t putUserRegistrationRecord() {
   }
 
   if (gApiResponseStatus.indexOf(gkHttpGetPutStatusOk) < 0) {
-    Serial.println(F("Bad Response Status"));
+    Serial.println(F("Bad Response Status!"));
     gIdentifyModeFingerprintId = 0;
     return -1;
   }
@@ -329,7 +329,7 @@ int8_t  httpsRequest(const char * httpMethod, String httpUri, String body) {
 
   Serial.println();
   Serial.println();
-  Serial.println(F("Closing connection"));
+  Serial.println(F("Closing connection..."));
 
   Serial.println();
   Serial.println(F("Response Status: "));
@@ -355,7 +355,7 @@ void connectToWifi() {
   }
 
   Serial.println();
-  Serial.println(F("WiFi connected"));
+  Serial.println(F("WiFi connected!"));
   Serial.print(F("IP address: "));
   Serial.print(WiFi.localIP());
   return;

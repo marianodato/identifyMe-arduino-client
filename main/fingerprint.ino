@@ -9,20 +9,22 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
 
   if (p > 0) {
     Serial.println(F("Fingerprint already stored!"));
-    return -1;
+    return p;
   } else if (p == -1) {
     return -1;
   }
 
-  Serial.println(F("Remove finger"));
+  Serial.println(F("Remove finger..."));
+  lcdPrint(3, 1, F("Por favor,"), F("remueva huella"), false, true);
   delay(gkBigTimeout);
   while (p != FINGERPRINT_NOFINGER) {
     p = finger.getImage();
   }
   Serial.print(F("ID "));
   Serial.println(id);
-  Serial.println(F("Place same finger again"));
-
+  Serial.println(F("Place same finger again!"));
+  lcdPrint(3, 1, F("Por favor,"), F("inserte huella"), false, true);
+  delay(gkPiezoTimeout);
   p = getImage();
 
   if (p != FINGERPRINT_OK) {
@@ -44,7 +46,7 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
     return -1;
   }
 
-  Serial.print(F("ID "));
+  Serial.print(F("Id "));
   Serial.println(id);
 
   p = storeModel(id);
@@ -61,6 +63,8 @@ int8_t  getFingerprintIDez() {
   const uint8_t kSlot = 1;
   gIdentifyModeFingerprintId = 0;
 
+  lcdPrint(3, 1, F("Por favor,"), F("inserte huella"), false, true);
+  delay(gkPiezoTimeout);
   p = getImage();
 
   if (p != FINGERPRINT_OK) {
@@ -100,23 +104,23 @@ int8_t getImage() {
     p = finger.getImage();
     switch (p) {
       case FINGERPRINT_OK:
-        Serial.println(F("Image taken"));
+        Serial.println(F("Image taken!"));
         break;
       case FINGERPRINT_NOFINGER:
         Serial.println(F("."));
         break;
       case FINGERPRINT_PACKETRECIEVEERR:
-        Serial.println(F("Communication error"));
+        Serial.println(F("Communication error!"));
         break;
       case FINGERPRINT_IMAGEFAIL:
-        Serial.println(F("Imaging error"));
+        Serial.println(F("Imaging error!"));
         break;
       default:
-        Serial.println(F("Unknown error"));
+        Serial.println(F("Unknown error!"));
         break;
     }
     if ((millis() - timeout) > gkTimeoutFingerprint) {
-      Serial.println(F("Fingerprint timeout"));
+      Serial.println(F("Fingerprint timeout!"));
       break;
     }
   }
@@ -128,22 +132,22 @@ int8_t  imageToTemplate(uint8_t  slot) {
   p = finger.image2Tz(slot);
   switch (p) {
     case FINGERPRINT_OK:
-      Serial.println(F("Image converted"));
+      Serial.println(F("Image converted!"));
       break;
     case FINGERPRINT_IMAGEMESS:
-      Serial.println(F("Image too messy"));
+      Serial.println(F("Image too messy!"));
       break;
     case FINGERPRINT_PACKETRECIEVEERR:
-      Serial.println(F("Communication error"));
+      Serial.println(F("Communication error!"));
       break;
     case FINGERPRINT_FEATUREFAIL:
-      Serial.println(F("Could not find fingerprint features"));
+      Serial.println(F("Could not find fingerprint features!"));
       break;
     case FINGERPRINT_INVALIDIMAGE:
-      Serial.println(F("Could not find fingerprint features"));
+      Serial.println(F("Could not find fingerprint features!"));
       break;
     default:
-      Serial.println(F("Unknown error"));
+      Serial.println(F("Unknown error!"));
       break;
   }
   return p;
@@ -155,11 +159,11 @@ int8_t  createModel() {
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Prints matched!"));
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println(F("Communication error"));
+    Serial.println(F("Communication error!"));
   } else if (p == FINGERPRINT_ENROLLMISMATCH) {
-    Serial.println(F("Fingerprints did not match"));
+    Serial.println(F("Fingerprints did not match!"));
   } else {
-    Serial.println(F("Unknown error"));
+    Serial.println(F("Unknown error!"));
   }
   return p;
 }
@@ -170,13 +174,13 @@ int8_t  storeModel(uint8_t  id) {
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Stored!"));
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println(F("Communication error"));
+    Serial.println(F("Communication error!"));
   } else if (p == FINGERPRINT_BADLOCATION) {
-    Serial.println(F("Could not store in that location"));
+    Serial.println(F("Could not store in that location!"));
   } else if (p == FINGERPRINT_FLASHERR) {
-    Serial.println(F("Error writing to flash"));
+    Serial.println(F("Error writing to flash!"));
   } else {
-    Serial.println(F("Unknown error"));
+    Serial.println(F("Unknown error!"));
   }
   return p;
 }
@@ -188,11 +192,11 @@ int8_t  fastSearch() {
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Found a print match!"));
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println(F("Communication error"));
+    Serial.println(F("Communication error!"));
   } else if (p == FINGERPRINT_NOTFOUND) {
-    Serial.println(F("Did not find a match"));
+    Serial.println(F("Did not find a match!"));
   } else {
-    Serial.println(F("Unknown error"));
+    Serial.println(F("Unknown error!"));
   }
   return p;
 }
@@ -205,13 +209,13 @@ int8_t  deleteFingerprint(uint8_t  id) {
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Deleted!"));
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println(F("Communication error"));
+    Serial.println(F("Communication error!"));
   } else if (p == FINGERPRINT_BADLOCATION) {
-    Serial.println(F("Could not delete in that location"));
+    Serial.println(F("Could not delete in that location!"));
   } else if (p == FINGERPRINT_FLASHERR) {
-    Serial.println(F("Error writing to flash"));
+    Serial.println(F("Error writing to flash!"));
   } else {
-    Serial.print(F("Unknown error"));
+    Serial.print(F("Unknown error!"));
   }
   return p;
 }
