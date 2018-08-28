@@ -30,8 +30,8 @@ const int gkFingerprintSignarute = 00140042;
 const uint16_t gkSerialTransmissionSpeed = 9600;
 const uint16_t gkFingerprintTransmissionSpeed = 57600;
 
-const char * gkWifiSsid = "TH14";
-const char * gkWifiPassword = "TheInvincibles26W12D0L";
+const char * gkWifiSsid = "D200";
+const char * gkWifiPassword = "pokemon1234";
 const char * gkSignatureKey = "MvzLX99WFmrMilNnfqi0V6rt6zVspIxO";
 
 const uint16_t gkHttpsPort = 443;
