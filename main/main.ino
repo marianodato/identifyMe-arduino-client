@@ -98,6 +98,9 @@ void setup() {
     }
   }
 
+  //finger.emptyDatabase();
+  //Serial.println(F("Now database is empty!"));
+
   connectToWifi();
   getSignature();
   Serial.println(F("Select mode..."));
