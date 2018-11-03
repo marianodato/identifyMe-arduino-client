@@ -72,5 +72,6 @@ void testScreens() {
   lcdPrint(1, 3, F("Error al crear"), F("registro!"), true, false);
   lcdPrint(3, 0, F("Bienvenido,"), F("USERNAME"), true, false);
   lcdPrint(2, 0, F("Hasta luego,"), F("USERNAME"), true, false);
+  lcdPrint(2, 2, F("Las  huellas"), F("no coinciden!"), true, false);
   return;
 }

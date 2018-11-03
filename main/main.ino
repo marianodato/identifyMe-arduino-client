@@ -149,6 +149,8 @@ void loop() {
       Serial.println(F("Error enrolling fingerprint!"));
       if (resp > 0) {
         lcdPrint(2, 2, F("La huella ya"), F("fue cargada!"), true, true);
+      } else if (resp == -2) {
+        lcdPrint(2, 2, F("Las  huellas"), F("no coinciden!"), true, false);
       } else {
         lcdPrint(4, 1, F("Error al"), F("cargar huella!"), true, true);
       }

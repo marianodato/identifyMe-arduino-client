@@ -43,7 +43,11 @@ int8_t  getFingerprintEnroll(uint8_t  id) {
   p = createModel();
 
   if (p != FINGERPRINT_OK) {
-    return -1;
+    if (p == FINGERPRINT_ENROLLMISMATCH) {
+      return -2;
+    } else {
+      return -1;
+    }
   }
 
   Serial.print(F("Id "));
